@@ -182,7 +182,7 @@ VectorXf QuadEstimatorEKF::PredictState(VectorXf curState, float dt, V3F accel, 
   V3F v = attitude.Rotate_BtoI(accel);
   term2 << 0, 0, 0, v[0], v[1], v[2], 0;
   term2 *= dt;
-  VectorXf term1(ekfState);
+  VectorXf term1(predictedState);
   term1[0] += term1[3] * dt;
   term1[1] += term1[4] * dt;
   term1[2] += term1[5] * dt;
@@ -281,7 +281,9 @@ void QuadEstimatorEKF::Predict(float dt, V3F accel, V3F gyro)
   gPrime(4, 6) = term[1];
   gPrime(5, 6) = term[2];
 
+  printf("%.2f, %.2f, %.2f\n%.2f, %.2f, %.2f\n%.2f, %.2f, %.2f\n", ekfCov(0, 0), ekfCov(0, 1), ekfCov(0, 2), ekfCov(1, 0), ekfCov(1, 1), ekfCov(1, 2), ekfCov(2, 0), ekfCov(2, 1), ekfCov(2, 2));
   ekfCov = gPrime * ekfCov * gPrime.transpose() + Q;
+  printf("%.2f, %.2f, %.2f\n%.2f, %.2f, %.2f\n%.2f, %.2f, %.2f\n\n", ekfCov(0, 0), ekfCov(0, 1), ekfCov(0, 2), ekfCov(1, 0), ekfCov(1, 1), ekfCov(1, 2), ekfCov(2, 0), ekfCov(2, 1), ekfCov(2, 2));
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
