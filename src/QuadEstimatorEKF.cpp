@@ -177,7 +177,17 @@ VectorXf QuadEstimatorEKF::PredictState(VectorXf curState, float dt, V3F accel, 
   Quaternion<float> attitude = Quaternion<float>::FromEuler123_RPY(rollEst, pitchEst, curState(6));
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
-
+  
+  VectorXf term2(QUAD_EKF_NUM_STATES);
+  V3F v = attitude.Rotate_BtoI(accel);
+  term2 << 0, 0, 0, v[0], v[1], v[2], 0;
+  term2 *= dt;
+  VectorXf term1(ekfState);
+  term1[0] += term1[3] * dt;
+  term1[1] += term1[4] * dt;
+  term1[2] += term1[5] * dt;
+  term1[5] -= static_cast<float>(CONST_GRAVITY * dt);
+  predictedState = term1 + term2;
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -204,7 +214,16 @@ MatrixXf QuadEstimatorEKF::GetRbgPrime(float roll, float pitch, float yaw)
   //   that your calculations are reasonable
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
+  float cosPhi = cosf(roll);
+  float sinPhi = sinf(roll);
+  float cosTheta = cosf(pitch);
+  float sinTheta = sinf(pitch);
+  float cosPsi = cosf(yaw);
+  float sinPsi = sinf(yaw);
 
+  RbgPrime << -cosTheta * sinPsi, -sinPhi * sinTheta * sinPsi - cosTheta * cosPsi, -cosPhi * sinTheta * sinPsi + sinPhi * cosPsi,
+               cosTheta * cosPsi, sinPhi * sinTheta * cosPsi - cosPhi * sinPsi, cosPhi * sinTheta * cosPsi + sinPhi * sinPsi,
+               0, 0, 0;
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -251,6 +270,18 @@ void QuadEstimatorEKF::Predict(float dt, V3F accel, V3F gyro)
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+  gPrime(0, 3) = gPrime(1, 4) = gPrime(2, 5) = dt;
+
+  VectorXf accelV(3);
+  accelV << accel[0], accel[1], accel[2];
+  VectorXf term = RbgPrime * accelV;
+  term *= dt;
+
+  gPrime(3, 6) = term[0];
+  gPrime(4, 6) = term[1];
+  gPrime(5, 6) = term[2];
+
+  ekfCov = gPrime * ekfCov * gPrime.transpose() + Q;
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
