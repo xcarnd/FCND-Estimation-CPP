@@ -92,6 +92,7 @@ void QuadEstimatorEKF::UpdateFromIMU(V3F accel, V3F gyro)
   // SMALL ANGLE GYRO INTEGRATION:
   // (replace the code below)
   // make sure you comment it out when you add your own code -- otherwise e.g. you might integrate yaw twice
+  
   Quaternion<float> q = Quaternion<float>::FromEuler123_RPY(rollEst, pitchEst, ekfState(6));
   q.IntegrateBodyRate(gyro, dtIMU);
   
@@ -99,7 +100,19 @@ void QuadEstimatorEKF::UpdateFromIMU(V3F accel, V3F gyro)
   float predictedRoll = static_cast<float>(eulerRPY[0]);
   float predictedPitch = static_cast<float>(eulerRPY[1]);
   ekfState(6) = static_cast<float>(eulerRPY[2]);
-
+  
+  /*
+  float e[9] = {
+    1, sinf(rollEst) * tanf(pitchEst), cosf(rollEst) * tan(pitchEst),
+    0, cosf(rollEst), - sinf(rollEst),
+    0, sinf(rollEst) / cosf(pitchEst), cosf(rollEst) / cosf(pitchEst)
+  };
+  V3F eulerDerivatives = Mat3x3F(e) * gyro;
+  V3F newEuler = V3F(rollEst, pitchEst, ekfState(6)) + eulerDerivatives * dtIMU;
+  float predictedRoll = newEuler[0];
+  float predictedPitch = newEuler[1];
+  ekfState(6) = newEuler[2];
+  */
   // normalize yaw to -pi .. pi
   if (ekfState(6) > F_PI) ekfState(6) -= 2.f*F_PI;
   if (ekfState(6) < -F_PI) ekfState(6) += 2.f*F_PI;
