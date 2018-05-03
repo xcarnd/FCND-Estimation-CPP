@@ -105,6 +105,27 @@
   <ItemGroup>
     <None Include="..\lib\matrix\LICENSE" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\config\01_Intro.txt" />
+    <Text Include="..\config\02_AttitudeControl.txt" />
+    <Text Include="..\config\03_PositionControl.txt" />
+    <Text Include="..\config\04_Nonidealities.txt" />
+    <Text Include="..\config\05_TrajectoryFollow.txt" />
+    <Text Include="..\config\06_SensorNoise.txt" />
+    <Text Include="..\config\07_AttitudeEstimation.txt" />
+    <Text Include="..\config\08_PredictState.txt" />
+    <Text Include="..\config\09_PredictCovariance.txt" />
+    <Text Include="..\config\10_MagUpdate.txt" />
+    <Text Include="..\config\11_GPSUpdate.txt" />
+    <Text Include="..\config\LastScenario.txt" />
+    <Text Include="..\config\log\Graph1.txt" />
+    <Text Include="..\config\log\Graph2.txt" />
+    <Text Include="..\config\QuadControlParams.txt" />
+    <Text Include="..\config\QuadEstimatorEKF.txt" />
+    <Text Include="..\config\QuadPhysicalParams.txt" />
+    <Text Include="..\config\Scenarios.txt" />
+    <Text Include="..\config\SimulatedSensors.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{D8435B4A-B444-4C1B-ABC8-6D1C779B268D}</ProjectGuid>
