@@ -281,10 +281,8 @@ void QuadEstimatorEKF::Predict(float dt, V3F accel, V3F gyro)
   gPrime(4, 6) = term[1];
   gPrime(5, 6) = term[2];
 
-  printf("%.2f, %.2f, %.2f\n%.2f, %.2f, %.2f\n%.2f, %.2f, %.2f\n", ekfCov(0, 0), ekfCov(0, 1), ekfCov(0, 2), ekfCov(1, 0), ekfCov(1, 1), ekfCov(1, 2), ekfCov(2, 0), ekfCov(2, 1), ekfCov(2, 2));
   ekfCov = gPrime * ekfCov * gPrime.transpose() + Q;
-  printf("%.2f, %.2f, %.2f\n%.2f, %.2f, %.2f\n%.2f, %.2f, %.2f\n\n", ekfCov(0, 0), ekfCov(0, 1), ekfCov(0, 2), ekfCov(1, 0), ekfCov(1, 1), ekfCov(1, 2), ekfCov(2, 0), ekfCov(2, 1), ekfCov(2, 2));
-
+  
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   ekfState = newState;
