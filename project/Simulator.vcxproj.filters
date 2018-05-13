@@ -27,12 +27,6 @@
     <Filter Include="matrix">
       <UniqueIdentifier>{c9eb02fe-ae85-41a1-bccc-a1aaaacbb9c5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Config">
-      <UniqueIdentifier>{f3103b44-a32c-4320-b68b-002c308e4ac4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Log">
-      <UniqueIdentifier>{ddfdc0cc-a08b-4f5d-82f4-9334ede481e4}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -274,64 +268,5 @@
     <None Include="..\lib\matrix\LICENSE">
       <Filter>matrix</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\config\01_Intro.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\02_AttitudeControl.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\03_PositionControl.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\04_Nonidealities.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\05_TrajectoryFollow.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\06_SensorNoise.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\07_AttitudeEstimation.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\08_PredictState.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\09_PredictCovariance.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\10_MagUpdate.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\11_GPSUpdate.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\LastScenario.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\QuadControlParams.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\QuadEstimatorEKF.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\QuadPhysicalParams.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\Scenarios.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\SimulatedSensors.txt">
-      <Filter>Config</Filter>
-    </Text>
-    <Text Include="..\config\log\Graph1.txt">
-      <Filter>Log</Filter>
-    </Text>
-    <Text Include="..\config\log\Graph2.txt">
-      <Filter>Log</Filter>
-    </Text>
   </ItemGroup>
 </Project>
