@@ -1,25 +1,25 @@
 [QuadEstimatorEKF]
 InitState = 0, 0, -1, 0, 0, 0, 0
-InitStdDevs = .1, .1, .08, .1, .1, .3, .05
+InitStdDevs = .1, .1, .1, .1, .1, .1, .05
 
 # Process noise model
 # note that the process covariance matrix is diag(pow(QStd,2))*dtIMU
 
-QPosXYStd = .01
-QPosZStd = 0.05
-QVelXYStd = .25
-QVelZStd = 0.05
-QYawStd = .1
+QPosXYStd = .05
+QPosZStd = 0.08
+QVelXYStd = .36
+QVelZStd = .1
+QYawStd = 0.1
 
 # GPS measurement std deviations
-GPSPosXYStd = 1
-GPSPosZStd = 3
+GPSPosXYStd = 0.7
+GPSPosZStd = 2
 GPSVelXYStd = .1
 GPSVelZStd = .3
 
 # Magnetometer
-MagYawStd = .1
+MagYawStd = 0.1
 
 dtIMU = 0.002
-attitudeTau = 5
+attitudeTau = 1
 
