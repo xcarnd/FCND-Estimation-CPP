@@ -5,9 +5,9 @@ InitStdDevs = .1, .1, .1, .1, .1, .1, .05
 # Process noise model
 # note that the process covariance matrix is diag(pow(QStd,2))*dtIMU
 
-QPosXYStd = .05
-QPosZStd = .05
-QVelXYStd = 1
+QPosXYStd = .01
+QPosZStd = .01
+QVelXYStd = 0.9
 QVelZStd = .1
 QYawStd = 0.1
 
