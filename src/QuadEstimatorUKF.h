@@ -57,8 +57,8 @@ public:
   void Update(VectorXf& z, MatrixXf& H, MatrixXf& R, VectorXf& zFromX);
 
   // EKF state and covariance
-	VectorXf ekfState;
-	MatrixXf ekfCov;
+	VectorXf ukfState;
+	MatrixXf ukfCov;
 
   // params
   float attitudeTau;
@@ -78,17 +78,17 @@ public:
 
 	virtual V3F EstimatedPosition() 
 	{
-		return V3F(ekfState(0), ekfState(1), ekfState(2));
+		return V3F(ukfState(0), ukfState(1), ukfState(2));
 	}
 
 	virtual V3F EstimatedVelocity()
 	{
-		return V3F(ekfState(3), ekfState(4), ekfState(5));
+		return V3F(ukfState(3), ukfState(4), ukfState(5));
 	}
 
 	virtual Quaternion<float> EstimatedAttitude()
 	{
-		return Quaternion<float>::FromEuler123_RPY(rollEst, pitchEst, ekfState(6));
+		return Quaternion<float>::FromEuler123_RPY(rollEst, pitchEst, ukfState(6));
 	}
 
 	virtual V3F EstimatedOmega()

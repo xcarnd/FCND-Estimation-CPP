@@ -13,8 +13,8 @@ QuadEstimatorUKF::QuadEstimatorUKF(string config, string name)
   Q(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES),
   R_GPS(6, 6),
   R_Mag(1, 1),
-  ekfState(QUAD_EKF_NUM_STATES),
-  ekfCov(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES),
+  ukfState(QUAD_EKF_NUM_STATES),
+  ukfCov(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES),
   trueError(QUAD_EKF_NUM_STATES)
 {
   _name = name;
@@ -30,14 +30,14 @@ void QuadEstimatorUKF::Init()
 {
   ParamsHandle paramSys = SimpleConfig::GetInstance();
 
-  paramSys->GetFloatVector(_config + ".InitState", ekfState);
+  paramSys->GetFloatVector(_config + ".InitState", ukfState);
 
   VectorXf initStdDevs(QUAD_EKF_NUM_STATES);
   paramSys->GetFloatVector(_config + ".InitStdDevs", initStdDevs);
-  ekfCov.setIdentity();
+  ukfCov.setIdentity();
   for (int i = 0; i < QUAD_EKF_NUM_STATES; i++)
   {
-    ekfCov(i, i) = initStdDevs(i) * initStdDevs(i);
+    ukfCov(i, i) = initStdDevs(i) * initStdDevs(i);
   }
 
   // complementary filter params
@@ -78,7 +78,7 @@ void QuadEstimatorUKF::UpdateFromIMU(V3F accel, V3F gyro)
   // Currently a small-angle approximation integration method is implemented
   // The integrated (predicted) value is then updated in a complementary filter style with attitude information from accelerometers
   // 
-  // Implement a better integration method that uses the current attitude estimate (rollEst, pitchEst and ekfState(6))
+  // Implement a better integration method that uses the current attitude estimate (rollEst, pitchEst and ukfState(6))
   // to integrate the body rates into new Euler angles.
   //
   // HINTS:
@@ -93,13 +93,13 @@ void QuadEstimatorUKF::UpdateFromIMU(V3F accel, V3F gyro)
   // (replace the code below)
   // make sure you comment it out when you add your own code -- otherwise e.g. you might integrate yaw twice
   
-  Quaternion<float> q = Quaternion<float>::FromEuler123_RPY(rollEst, pitchEst, ekfState(6));
+  Quaternion<float> q = Quaternion<float>::FromEuler123_RPY(rollEst, pitchEst, ukfState(6));
   q.IntegrateBodyRate(gyro, dtIMU);
   
   V3D eulerRPY = q.ToEulerRPY();
   float predictedRoll = static_cast<float>(eulerRPY[0]);
   float predictedPitch = static_cast<float>(eulerRPY[1]);
-  ekfState(6) = static_cast<float>(eulerRPY[2]);
+  ukfState(6) = static_cast<float>(eulerRPY[2]);
   
   /*
   float e[9] = {
@@ -108,14 +108,14 @@ void QuadEstimatorUKF::UpdateFromIMU(V3F accel, V3F gyro)
     0, sinf(rollEst) / cosf(pitchEst), cosf(rollEst) / cosf(pitchEst)
   };
   V3F eulerDerivatives = Mat3x3F(e) * gyro;
-  V3F newEuler = V3F(rollEst, pitchEst, ekfState(6)) + eulerDerivatives * dtIMU;
+  V3F newEuler = V3F(rollEst, pitchEst, ukfState(6)) + eulerDerivatives * dtIMU;
   float predictedRoll = newEuler[0];
   float predictedPitch = newEuler[1];
-  ekfState(6) = newEuler[2];
+  ukfState(6) = newEuler[2];
   */
   // normalize yaw to -pi .. pi
-  if (ekfState(6) > F_PI) ekfState(6) -= 2.f*F_PI;
-  if (ekfState(6) < -F_PI) ekfState(6) += 2.f*F_PI;
+  if (ukfState(6) > F_PI) ukfState(6) -= 2.f*F_PI;
+  if (ukfState(6) < -F_PI) ukfState(6) += 2.f*F_PI;
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -141,7 +141,7 @@ void QuadEstimatorUKF::UpdateTrueError(V3F truePos, V3F trueVel, Quaternion<floa
   trueState(5) = trueVel.z;
   trueState(6) = trueAtt.Yaw();
 
-  trueError = ekfState - trueState;
+  trueError = ukfState - trueState;
   if (trueError(6) > F_PI) trueError(6) -= 2.f*F_PI;
   if (trueError(6) < -F_PI) trueError(6) += 2.f*F_PI;
 
@@ -149,8 +149,8 @@ void QuadEstimatorUKF::UpdateTrueError(V3F truePos, V3F trueVel, Quaternion<floa
   rollErr = rollEst - trueAtt.Roll();
   maxEuler = MAX(fabs(pitchErr), MAX(fabs(rollErr), fabs(trueError(6))));
 
-  posErrorMag = truePos.dist(V3F(ekfState(0), ekfState(1), ekfState(2)));
-  velErrorMag = trueVel.dist(V3F(ekfState(3), ekfState(4), ekfState(5)));
+  posErrorMag = truePos.dist(V3F(ukfState(0), ukfState(1), ukfState(2)));
+  velErrorMag = trueVel.dist(V3F(ukfState(3), ukfState(4), ukfState(5)));
 }
 
 VectorXf QuadEstimatorUKF::PredictState(VectorXf curState, float dt, V3F accel, V3F gyro)
@@ -233,7 +233,7 @@ MatrixXf QuadEstimatorUKF::GetRbgPrime(float roll, float pitch, float yaw)
 void QuadEstimatorUKF::Predict(float dt, V3F accel, V3F gyro)
 {
   // predict the state forward
-  VectorXf newState = PredictState(ekfState, dt, accel, gyro);
+  VectorXf newState = PredictState(ukfState, dt, accel, gyro);
 
   // Predict the current covariance forward by dt using the current accelerations and body rates as input.
   // INPUTS: 
@@ -262,7 +262,7 @@ void QuadEstimatorUKF::Predict(float dt, V3F accel, V3F gyro)
   // 
 
   // we'll want the partial derivative of the Rbg matrix
-  MatrixXf RbgPrime = GetRbgPrime(rollEst, pitchEst, ekfState(6));
+  MatrixXf RbgPrime = GetRbgPrime(rollEst, pitchEst, ukfState(6));
 
   // we've created an empty Jacobian for you, currently simply set to identity
   MatrixXf gPrime(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES);
@@ -281,11 +281,11 @@ void QuadEstimatorUKF::Predict(float dt, V3F accel, V3F gyro)
   gPrime(4, 6) = term[1];
   gPrime(5, 6) = term[2];
 
-  ekfCov = gPrime * ekfCov * gPrime.transpose() + Q;
+  ukfCov = gPrime * ukfCov * gPrime.transpose() + Q;
   
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
-  ekfState = newState;
+  ukfState = newState;
 }
 
 void QuadEstimatorUKF::UpdateFromGPS(V3F pos, V3F vel)
@@ -308,7 +308,7 @@ void QuadEstimatorUKF::UpdateFromGPS(V3F pos, V3F vel)
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
   int diagSize = QUAD_EKF_NUM_STATES - 1;
   hPrime.topLeftCorner(diagSize, diagSize) = MatrixXf::Identity(diagSize, diagSize);
-  zFromX = hPrime * ekfState;
+  zFromX = hPrime * ukfState;
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -325,14 +325,14 @@ void QuadEstimatorUKF::UpdateFromMag(float magYaw)
 
   // MAGNETOMETER UPDATE
   // Hints: 
-  //  - Your current estimated yaw can be found in the state vector: ekfState(6)
+  //  - Your current estimated yaw can be found in the state vector: ukfState(6)
   //  - Make sure to normalize the difference between your measured and estimated yaw
   //    (you don't want to update your yaw the long way around the circle)
   //  - The magnetomer measurement covariance is available in member variable R_Mag
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
   hPrime(0, 6) = 1;
-  zFromX = hPrime * ekfState;
+  zFromX = hPrime * ukfState;
   if (magYaw - zFromX[0] > F_PI) {
     zFromX[0] += 2 * F_PI;
   }
@@ -359,15 +359,15 @@ void QuadEstimatorUKF::Update(VectorXf& z, MatrixXf& H, MatrixXf& R, VectorXf& z
   assert(z.size() == zFromX.size());
 
   MatrixXf toInvert(z.size(), z.size());
-  toInvert = H*ekfCov*H.transpose() + R;
-  MatrixXf K = ekfCov * H.transpose() * toInvert.inverse();
+  toInvert = H*ukfCov*H.transpose() + R;
+  MatrixXf K = ukfCov * H.transpose() * toInvert.inverse();
 
-  ekfState = ekfState + K*(z - zFromX);
+  ukfState = ukfState + K*(z - zFromX);
 
   MatrixXf eye(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES);
   eye.setIdentity();
 
-  ekfCov = (eye - K*H)*ekfCov;
+  ukfCov = (eye - K*H)*ukfCov;
 }
 
 // Calculate the condition number of the EKF ovariance matrix (useful for numerical diagnostics)
@@ -380,7 +380,7 @@ float QuadEstimatorUKF::CovConditionNumber() const
   {
     for (int j = 0; j < 7; j++)
     {
-      m(i, j) = ekfCov(i, j);
+      m(i, j) = ukfCov(i, j);
     }
   }
 
@@ -403,21 +403,21 @@ bool QuadEstimatorUKF::GetData(const string& name, float& ret) const
     GETTER_HELPER("Est.roll", rollEst);
     GETTER_HELPER("Est.pitch", pitchEst);
 
-    GETTER_HELPER("Est.x", ekfState(0));
-    GETTER_HELPER("Est.y", ekfState(1));
-    GETTER_HELPER("Est.z", ekfState(2));
-    GETTER_HELPER("Est.vx", ekfState(3));
-    GETTER_HELPER("Est.vy", ekfState(4));
-    GETTER_HELPER("Est.vz", ekfState(5));
-    GETTER_HELPER("Est.yaw", ekfState(6));
+    GETTER_HELPER("Est.x", ukfState(0));
+    GETTER_HELPER("Est.y", ukfState(1));
+    GETTER_HELPER("Est.z", ukfState(2));
+    GETTER_HELPER("Est.vx", ukfState(3));
+    GETTER_HELPER("Est.vy", ukfState(4));
+    GETTER_HELPER("Est.vz", ukfState(5));
+    GETTER_HELPER("Est.yaw", ukfState(6));
 
-    GETTER_HELPER("Est.S.x", sqrtf(ekfCov(0, 0)));
-    GETTER_HELPER("Est.S.y", sqrtf(ekfCov(1, 1)));
-    GETTER_HELPER("Est.S.z", sqrtf(ekfCov(2, 2)));
-    GETTER_HELPER("Est.S.vx", sqrtf(ekfCov(3, 3)));
-    GETTER_HELPER("Est.S.vy", sqrtf(ekfCov(4, 4)));
-    GETTER_HELPER("Est.S.vz", sqrtf(ekfCov(5, 5)));
-    GETTER_HELPER("Est.S.yaw", sqrtf(ekfCov(6, 6)));
+    GETTER_HELPER("Est.S.x", sqrtf(ukfCov(0, 0)));
+    GETTER_HELPER("Est.S.y", sqrtf(ukfCov(1, 1)));
+    GETTER_HELPER("Est.S.z", sqrtf(ukfCov(2, 2)));
+    GETTER_HELPER("Est.S.vx", sqrtf(ukfCov(3, 3)));
+    GETTER_HELPER("Est.S.vy", sqrtf(ukfCov(4, 4)));
+    GETTER_HELPER("Est.S.vz", sqrtf(ukfCov(5, 5)));
+    GETTER_HELPER("Est.S.yaw", sqrtf(ukfCov(6, 6)));
 
     // diagnostic variables
     GETTER_HELPER("Est.D.AccelPitch", accelPitch);
