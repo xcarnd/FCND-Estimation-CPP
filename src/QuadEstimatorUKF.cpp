@@ -6,16 +6,17 @@
 
 using namespace SLR;
 
-const int QuadEstimatorUKF::QUAD_EKF_NUM_STATES;
+const int QuadEstimatorUKF::QUAD_UKF_NUM_STATES;
 
 QuadEstimatorUKF::QuadEstimatorUKF(string config, string name)
   : BaseQuadEstimator(config),
-  Q(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES),
+  Q(QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_STATES),
   R_GPS(6, 6),
   R_Mag(1, 1),
-  ukfState(QUAD_EKF_NUM_STATES),
-  ukfCov(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES),
-  trueError(QUAD_EKF_NUM_STATES)
+  ukfState(QUAD_UKF_NUM_STATES),
+  ukfCov(QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_STATES),
+  trueError(QUAD_UKF_NUM_STATES),
+  ukfSigmaPoints(QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_STATES * 2 + 1)
 {
   _name = name;
   Init();
@@ -32,10 +33,10 @@ void QuadEstimatorUKF::Init()
 
   paramSys->GetFloatVector(_config + ".InitState", ukfState);
 
-  VectorXf initStdDevs(QUAD_EKF_NUM_STATES);
+  VectorXf initStdDevs(QUAD_UKF_NUM_STATES);
   paramSys->GetFloatVector(_config + ".InitStdDevs", initStdDevs);
   ukfCov.setIdentity();
-  for (int i = 0; i < QUAD_EKF_NUM_STATES; i++)
+  for (int i = 0; i < QUAD_UKF_NUM_STATES; i++)
   {
     ukfCov(i, i) = initStdDevs(i) * initStdDevs(i);
   }
@@ -66,6 +67,10 @@ void QuadEstimatorUKF::Init()
   Q(5, 5) = powf(paramSys->Get(_config + ".QVelZStd", 0), 2);
   Q(6, 6) = powf(paramSys->Get(_config + ".QYawStd", 0), 2);
   Q *= dtIMU;
+
+  // initialize sigma points matrix
+  // for N states, we will generate 2 * N + 1 sigma points
+  ukfSigmaPoints.setZero();
 
   rollErr = pitchErr = maxEuler = 0;
   posErrorMag = velErrorMag = 0;
@@ -132,7 +137,7 @@ void QuadEstimatorUKF::UpdateFromIMU(V3F accel, V3F gyro)
 
 void QuadEstimatorUKF::UpdateTrueError(V3F truePos, V3F trueVel, Quaternion<float> trueAtt)
 {
-  VectorXf trueState(QUAD_EKF_NUM_STATES);
+  VectorXf trueState(QUAD_UKF_NUM_STATES);
   trueState(0) = truePos.x;
   trueState(1) = truePos.y;
   trueState(2) = truePos.z;
@@ -153,9 +158,13 @@ void QuadEstimatorUKF::UpdateTrueError(V3F truePos, V3F trueVel, Quaternion<floa
   velErrorMag = trueVel.dist(V3F(ukfState(3), ukfState(4), ukfState(5)));
 }
 
+void QuadEstimatorUKF::ComputeSigmaPoints() {
+  
+}
+
 VectorXf QuadEstimatorUKF::PredictState(VectorXf curState, float dt, V3F accel, V3F gyro)
 {
-  assert(curState.size() == QUAD_EKF_NUM_STATES);
+  assert(curState.size() == QUAD_UKF_NUM_STATES);
   VectorXf predictedState = curState;
   // Predict the current state forward by time dt using current accelerations and body rates as input
   // INPUTS: 
@@ -178,7 +187,7 @@ VectorXf QuadEstimatorUKF::PredictState(VectorXf curState, float dt, V3F accel, 
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
   
-  VectorXf term2(QUAD_EKF_NUM_STATES);
+  VectorXf term2(QUAD_UKF_NUM_STATES);
   V3F v = attitude.Rotate_BtoI(accel);
   term2 << 0, 0, 0, v[0], v[1], v[2], 0;
   term2 *= dt;
@@ -265,7 +274,7 @@ void QuadEstimatorUKF::Predict(float dt, V3F accel, V3F gyro)
   MatrixXf RbgPrime = GetRbgPrime(rollEst, pitchEst, ukfState(6));
 
   // we've created an empty Jacobian for you, currently simply set to identity
-  MatrixXf gPrime(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES);
+  MatrixXf gPrime(QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_STATES);
   gPrime.setIdentity();
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
@@ -298,7 +307,7 @@ void QuadEstimatorUKF::UpdateFromGPS(V3F pos, V3F vel)
   z(4) = vel.y;
   z(5) = vel.z;
 
-  MatrixXf hPrime(6, QUAD_EKF_NUM_STATES);
+  MatrixXf hPrime(6, QUAD_UKF_NUM_STATES);
   hPrime.setZero();
 
   // GPS UPDATE
@@ -306,7 +315,7 @@ void QuadEstimatorUKF::UpdateFromGPS(V3F pos, V3F vel)
   //  - The GPS measurement covariance is available in member variable R_GPS
   //  - this is a very simple update
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
-  int diagSize = QUAD_EKF_NUM_STATES - 1;
+  int diagSize = QUAD_UKF_NUM_STATES - 1;
   hPrime.topLeftCorner(diagSize, diagSize) = MatrixXf::Identity(diagSize, diagSize);
   zFromX = hPrime * ukfState;
 
@@ -320,7 +329,7 @@ void QuadEstimatorUKF::UpdateFromMag(float magYaw)
   VectorXf z(1), zFromX(1);
   z(0) = magYaw;
 
-  MatrixXf hPrime(1, QUAD_EKF_NUM_STATES);
+  MatrixXf hPrime(1, QUAD_UKF_NUM_STATES);
   hPrime.setZero();
 
   // MAGNETOMETER UPDATE
@@ -353,7 +362,7 @@ void QuadEstimatorUKF::UpdateFromMag(float magYaw)
 void QuadEstimatorUKF::Update(VectorXf& z, MatrixXf& H, MatrixXf& R, VectorXf& zFromX)
 {
   assert(z.size() == H.rows());
-  assert(QUAD_EKF_NUM_STATES == H.cols());
+  assert(QUAD_UKF_NUM_STATES == H.cols());
   assert(z.size() == R.rows());
   assert(z.size() == R.cols());
   assert(z.size() == zFromX.size());
@@ -364,7 +373,7 @@ void QuadEstimatorUKF::Update(VectorXf& z, MatrixXf& H, MatrixXf& R, VectorXf& z
 
   ukfState = ukfState + K*(z - zFromX);
 
-  MatrixXf eye(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES);
+  MatrixXf eye(QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_STATES);
   eye.setIdentity();
 
   ukfCov = (eye - K*H)*ukfCov;
