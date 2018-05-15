@@ -6,8 +6,8 @@ InitStdDevs = .1, .1, .1, .1, .1, .1, .05
 # note that the process covariance matrix is diag(pow(QStd,2))*dtIMU
 
 QPosXYStd = .05
-QPosZStd = 0.08
-QVelXYStd = .36
+QPosZStd = .05
+QVelXYStd = 1
 QVelZStd = .1
 QYawStd = 0.1
 
