@@ -7,7 +7,7 @@
 #include "Utility/StringUtils.h"
 #include "ControllerFactory.h"
 
-#include "QuadEstimatorEKF.h"
+#include "QuadEstimatorUKF.h"
 #include "SimulatedGPS.h"
 #include "SimulatedIMU.h"
 #include "SimulatedMag.h"
@@ -104,8 +104,8 @@ int QuadDynamics::Initialize()
   }
 
 	// CREATE ESTIMATOR
-  string estConfig = config->Get(_name + ".Estimator", "QuadEstimatorEKF");
-  estimator.reset(new QuadEstimatorEKF(estConfig, _name));
+  string estConfig = config->Get(_name + ".Estimator", "QuadEstimatorUKF");
+  estimator.reset(new QuadEstimatorUKF(estConfig, _name));
 
   _lastPosFollowErr = 0;
 
