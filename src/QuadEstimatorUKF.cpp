@@ -241,6 +241,8 @@ MatrixXf QuadEstimatorUKF::GetRbgPrime(float roll, float pitch, float yaw)
 
 void QuadEstimatorUKF::Predict(float dt, V3F accel, V3F gyro)
 {
+  // Compute sigma points with current mean and covariance
+  ComputeSigmaPoints();
   // predict the state forward
   VectorXf newState = PredictState(ukfState, dt, accel, gyro);
 
