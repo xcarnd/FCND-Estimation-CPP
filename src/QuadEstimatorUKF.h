@@ -23,7 +23,7 @@ public:
 
   virtual void Predict(float dt, V3F accel, V3F gyro);
 
-  void ComputeSigmaPoints();
+  void ComputeSigmaPointsAndWeights();
 
   // helper functions for Predict
   VectorXf PredictState(VectorXf curState, float dt, V3F accel, V3F gyro);
@@ -64,6 +64,19 @@ public:
 
   // UKF sigma points
   MatrixXf ukfSigmaPoints;
+  // UKF mean weights
+  VectorXf ukfMeanWeights;
+  // UKF covariance weights
+  VectorXf ukfCovWeights;
+
+  // UKF parameters
+  // the following are free parameters
+  float alpha;
+  float beta;
+  float kappa;
+  // the following are derived parameters
+  float gamma;
+  float lambda;
 
   // params
   float attitudeTau;
