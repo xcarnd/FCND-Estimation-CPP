@@ -96,7 +96,6 @@
     <ClCompile Include="..\src\BaseQuadEstimator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\QuadEstimatorEKF.cpp" />
     <ClCompile Include="..\src\QuadEstimatorUKF.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -215,7 +214,6 @@
     <ClInclude Include="..\src\Simulation\SimulatedIMU.h">
       <Filter>Simulation</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\QuadEstimatorEKF.h" />
     <ClInclude Include="..\lib\matrix\helper_functions.hpp">
       <Filter>matrix</Filter>
     </ClInclude>
