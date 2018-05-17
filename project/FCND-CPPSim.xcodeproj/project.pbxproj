@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		17C92A9020AD373E00F71D8A /* QuadEstimatorUKF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 17C92A8F20AD373E00F71D8A /* QuadEstimatorUKF.cpp */; };
 		DB076C8B202A34C500386052 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB076C8A202A34C500386052 /* GLUT.framework */; };
 		DB47A220205151FE00F34E67 /* MavlinkNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DB47A219205151FD00F34E67 /* MavlinkNode.cpp */; };
 		DB47A221205151FE00F34E67 /* MavlinkTranslation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DB47A21E205151FE00F34E67 /* MavlinkTranslation.cpp */; };
@@ -31,7 +32,6 @@
 		DB49FB81202A0CC700DED4E6 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DB49FB67202A0CC600DED4E6 /* Camera.cpp */; };
 		DB49FB82202A0CC700DED4E6 /* SimpleConfig.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DB49FB6C202A0CC600DED4E6 /* SimpleConfig.cpp */; };
 		DB49FB83202A0CC700DED4E6 /* Timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DB49FB6F202A0CC600DED4E6 /* Timer.cpp */; };
-		DB56307920743A730070F86B /* QuadEstimatorEKF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DB56307520743A730070F86B /* QuadEstimatorEKF.cpp */; };
 		DB56307A20743A730070F86B /* BaseQuadEstimator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DB56307820743A730070F86B /* BaseQuadEstimator.cpp */; };
 		DBD204F32036369000E0F55A /* QuadControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DBD204F22036369000E0F55A /* QuadControl.cpp */; };
 /* End PBXBuildFile section */
@@ -49,6 +49,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		17C92A8E20AD373E00F71D8A /* QuadEstimatorUKF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = QuadEstimatorUKF.h; sourceTree = "<group>"; };
+		17C92A8F20AD373E00F71D8A /* QuadEstimatorUKF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = QuadEstimatorUKF.cpp; sourceTree = "<group>"; };
 		DB076C8A202A34C500386052 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
 		DB31989E20334078008ACD56 /* Simulation.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Simulation.txt; path = ../config/Simulation.txt; sourceTree = "<group>"; };
 		DB3198A320334078008ACD56 /* QuadPhysicalParams.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = QuadPhysicalParams.txt; path = ../config/QuadPhysicalParams.txt; sourceTree = "<group>"; };
@@ -122,9 +124,7 @@
 		DB56307220743A4E0070F86B /* SimulatedGPS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SimulatedGPS.h; sourceTree = "<group>"; };
 		DB56307320743A4E0070F86B /* SimulatedQuadSensor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SimulatedQuadSensor.h; sourceTree = "<group>"; };
 		DB56307420743A4E0070F86B /* SimulatedIMU.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SimulatedIMU.h; sourceTree = "<group>"; };
-		DB56307520743A730070F86B /* QuadEstimatorEKF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = QuadEstimatorEKF.cpp; sourceTree = "<group>"; };
 		DB56307620743A730070F86B /* BaseQuadEstimator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BaseQuadEstimator.h; sourceTree = "<group>"; };
-		DB56307720743A730070F86B /* QuadEstimatorEKF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = QuadEstimatorEKF.h; sourceTree = "<group>"; };
 		DB56307820743A730070F86B /* BaseQuadEstimator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BaseQuadEstimator.cpp; sourceTree = "<group>"; };
 		DB953DA52097BC4400B82E7B /* 08_PredictState.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = 08_PredictState.txt; path = ../config/08_PredictState.txt; sourceTree = "<group>"; };
 		DB953DA62097BC4400B82E7B /* 03_PositionControl.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = 03_PositionControl.txt; path = ../config/03_PositionControl.txt; sourceTree = "<group>"; };
@@ -224,10 +224,10 @@
 		DB49FB34202A0CC600DED4E6 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				17C92A8F20AD373E00F71D8A /* QuadEstimatorUKF.cpp */,
+				17C92A8E20AD373E00F71D8A /* QuadEstimatorUKF.h */,
 				DBD204F12036369000E0F55A /* QuadControl.h */,
 				DBD204F22036369000E0F55A /* QuadControl.cpp */,
-				DB56307720743A730070F86B /* QuadEstimatorEKF.h */,
-				DB56307520743A730070F86B /* QuadEstimatorEKF.cpp */,
 				DB56307620743A730070F86B /* BaseQuadEstimator.h */,
 				DB56307820743A730070F86B /* BaseQuadEstimator.cpp */,
 				DB49FB48202A0CC600DED4E6 /* main.cpp */,
@@ -387,6 +387,7 @@
 				DB49FB77202A0CC700DED4E6 /* GraphManager.cpp in Sources */,
 				DB49FB7E202A0CC700DED4E6 /* rangefinder.cpp in Sources */,
 				DB49FB7F202A0CC700DED4E6 /* Simulator.cpp in Sources */,
+				17C92A9020AD373E00F71D8A /* QuadEstimatorUKF.cpp in Sources */,
 				DB49FB72202A0CC700DED4E6 /* BaseController.cpp in Sources */,
 				DB49FB81202A0CC700DED4E6 /* Camera.cpp in Sources */,
 				DB49FB74202A0CC700DED4E6 /* DrawingFuncs.cpp in Sources */,
@@ -407,7 +408,6 @@
 				DBD204F32036369000E0F55A /* QuadControl.cpp in Sources */,
 				DB49FB79202A0CC700DED4E6 /* main.cpp in Sources */,
 				DB47A225205152DE00F34E67 /* Geometry.cpp in Sources */,
-				DB56307920743A730070F86B /* QuadEstimatorEKF.cpp in Sources */,
 				DB49FB76202A0CC700DED4E6 /* Graph.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
