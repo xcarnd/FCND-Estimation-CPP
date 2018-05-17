@@ -10,6 +10,7 @@ using namespace std;
 using namespace SLR;
 
 const int QuadEstimatorUKF::QUAD_UKF_NUM_STATES;
+const int QuadEstimatorUKF::QUAD_UKF_NUM_SIGMA_POINTS;
 
 QuadEstimatorUKF::QuadEstimatorUKF(string config, string name)
   : BaseQuadEstimator(config),
@@ -19,9 +20,9 @@ QuadEstimatorUKF::QuadEstimatorUKF(string config, string name)
   ukfState(QUAD_UKF_NUM_STATES),
   ukfCov(QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_STATES),
   trueError(QUAD_UKF_NUM_STATES),
-  ukfSigmaPoints(QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_STATES * 2 + 1),
-  ukfMeanWeights(QUAD_UKF_NUM_STATES * 2 + 1),
-  ukfCovWeights(QUAD_UKF_NUM_STATES * 2 + 1)
+  ukfSigmaPoints(QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_SIGMA_POINTS),
+  ukfMeanWeights(QUAD_UKF_NUM_SIGMA_POINTS),
+  ukfCovWeights(QUAD_UKF_NUM_SIGMA_POINTS)
 {
   _name = name;
   Init();
@@ -200,15 +201,14 @@ void QuadEstimatorUKF::ComputeSigmaPointsAndWeights() {
   // lambda / (N+lambda) for i = 0
   // 1 / (2 * (N+lambda)) for i > 0
   float k = QUAD_UKF_NUM_STATES + lambda;
+  ukfMeanWeights.setConstant(1 / (2 * k));
   ukfMeanWeights(0) = lambda / k;
-  ukfMeanWeights.tail(2 * QUAD_UKF_NUM_STATES).array() = 1 / (2 * k);
 
   // covariance weights:
   // lamda / (N+lambda) + ( 1 - alpha ^ 2 + beta ) for i = 0
   // 1 / (2 * (N+lambda)) for i > 0
+  ukfCovWeights.setConstant(1 / (2 * k));
   ukfCovWeights(0) = lambda / k + (1 - powf(alpha, 2) + beta);
-  ukfCovWeights.tail(2 * QUAD_UKF_NUM_STATES).array() = 1 / (2 * k);
-
 }
 
 VectorXf QuadEstimatorUKF::PredictState(VectorXf curState, float dt, V3F accel, V3F gyro)
@@ -292,65 +292,24 @@ void QuadEstimatorUKF::Predict(float dt, V3F accel, V3F gyro)
 {
   // Compute sigma points with current mean and covariance
   ComputeSigmaPointsAndWeights();
-  // predict the state forward
-  VectorXf newState = PredictState(ukfState, dt, accel, gyro);
-
-  // Predict the current covariance forward by dt using the current accelerations and body rates as input.
-  // INPUTS: 
-  //   dt: time step to predict forward by [s]
-  //   accel: acceleration of the vehicle, in body frame, *not including gravity* [m/s2]
-  //   gyro: body rates of the vehicle, in body frame [rad/s]
-  //   state (member variable): current state (state at the beginning of this prediction)
-  //   
-  // OUTPUT:
-  //   update the member variable cov to the predicted covariance
-
-  // HINTS
-  // - update the covariance matrix cov according to the EKF equation.
-  // 
-  // - you may find the current estimated attitude in variables rollEst, pitchEst, state(6).
-  //
-  // - use the class MatrixXf for matrices. To create a 3x5 matrix A, use MatrixXf A(3,5).
-  //
-  // - the transition model covariance, Q, is loaded up from a parameter file in member variable Q
-  // 
-  // - This is unfortunately a messy step. Try to split this up into clear, manageable steps:
-  //   1) Calculate the necessary helper matrices, building up the transition jacobian
-  //   2) Once all the matrices are there, write the equation to update cov.
-  //
-  // - if you want to transpose a matrix in-place, use A.transposeInPlace(), not A = A.transpose()
-  // 
-
-  // we'll want the partial derivative of the Rbg matrix
-  MatrixXf RbgPrime = GetRbgPrime(rollEst, pitchEst, ukfState(6));
-
-  // we've created an empty Jacobian for you, currently simply set to identity
-  MatrixXf gPrime(QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_STATES);
-  gPrime.setIdentity();
-
-  ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
-
-  gPrime(0, 3) = gPrime(1, 4) = gPrime(2, 5) = dt;
-
-  VectorXf accelV(3);
-  accelV << accel[0], accel[1], accel[2];
-  VectorXf term = RbgPrime * accelV;
-  term *= dt;
-
-  gPrime(3, 6) = term[0];
-  gPrime(4, 6) = term[1];
-  gPrime(5, 6) = term[2];
-
-  ukfCov = gPrime * ukfCov * gPrime.transpose() + Q;
-  
-  /////////////////////////////// END STUDENT CODE ////////////////////////////
-
-  ukfState = newState;
+  // Predict next values of sigma points
+  for (int i = 0; i < QUAD_UKF_NUM_SIGMA_POINTS; ++i) {
+    ukfSigmaPoints.col(i) = PredictState(ukfSigmaPoints.col(i), dt, accel, gyro);
+  }
+  ukfState = ukfSigmaPoints * ukfMeanWeights;
+  //cout << "sigma points:"<<endl<< ukfSigmaPoints << endl;
+  //cout << "weights:"<<endl<<ukfMeanWeights << endl;
+  cout << "new mean"<<endl<<ukfState.transpose() << endl;
+  MatrixXf diff_sp_mu = ukfSigmaPoints.colwise() - ukfState;
+  ukfCov = (ukfCovWeights.replicate(1, QUAD_UKF_NUM_STATES).transpose().array() * diff_sp_mu.array()).matrix() * diff_sp_mu.transpose() + Q;
+  //cout << "cov" << ukfCov << endl;
+  //cout << endl;
 }
 
 void QuadEstimatorUKF::UpdateFromGPS(V3F pos, V3F vel)
 {
-  VectorXf z(6), zFromX(6);
+  VectorXf z(6);
+  MatrixXf zFromX(6, QUAD_UKF_NUM_SIGMA_POINTS);
   z(0) = pos.x;
   z(1) = pos.y;
   z(2) = pos.z;
@@ -368,16 +327,17 @@ void QuadEstimatorUKF::UpdateFromGPS(V3F pos, V3F vel)
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
   int diagSize = QUAD_UKF_NUM_STATES - 1;
   hPrime.topLeftCorner(diagSize, diagSize) = MatrixXf::Identity(diagSize, diagSize);
-  zFromX = hPrime * ukfState;
+  zFromX = hPrime * ukfSigmaPoints;
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
-  Update(z, hPrime, R_GPS, zFromX);
+  Update(z, R_GPS, zFromX);
 }
 
 void QuadEstimatorUKF::UpdateFromMag(float magYaw)
 {
-  VectorXf z(1), zFromX(1);
+  VectorXf z(1);
+  MatrixXf zFromX(1, QUAD_UKF_NUM_SIGMA_POINTS);
   z(0) = magYaw;
 
   MatrixXf hPrime(1, QUAD_UKF_NUM_STATES);
@@ -392,42 +352,44 @@ void QuadEstimatorUKF::UpdateFromMag(float magYaw)
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
   hPrime(0, 6) = 1;
-  zFromX = hPrime * ukfState;
-  if (magYaw - zFromX[0] > F_PI) {
-    zFromX[0] += 2 * F_PI;
-  }
-  if (magYaw - zFromX[0] < -F_PI) {
-    zFromX[0] -= 2 * F_PI;
+  zFromX = hPrime * ukfSigmaPoints;
+  for (int i = 0; i < QUAD_UKF_NUM_SIGMA_POINTS; ++i) {
+    if (magYaw - zFromX(0, i) > F_PI) {
+      zFromX(0, i) += 2 * F_PI;
+    }
+    if (magYaw - zFromX(0, i) < -F_PI) {
+      zFromX(0, i) -= 2 * F_PI;
+    }
   }
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
-  Update(z, hPrime, R_Mag, zFromX);
+  Update(z, R_Mag, zFromX);
 }
 
 // Execute an EKF update step
 // z: measurement
-// H: Jacobian of observation function evaluated at the current estimated state
-// R: observation error model covariance 
-// zFromX: measurement prediction based on current state
-void QuadEstimatorUKF::Update(VectorXf& z, MatrixXf& H, MatrixXf& R, VectorXf& zFromX)
+// R: observation error model covariance
+// zFromSigmaPoints: measurement prediction based on sigma points
+void QuadEstimatorUKF::Update(VectorXf& z, MatrixXf& R, MatrixXf& zFromSigmaPoints)
 {
-  assert(z.size() == H.rows());
-  assert(QUAD_UKF_NUM_STATES == H.cols());
-  assert(z.size() == R.rows());
-  assert(z.size() == R.cols());
-  assert(z.size() == zFromX.size());
-
-  MatrixXf toInvert(z.size(), z.size());
-  toInvert = H*ukfCov*H.transpose() + R;
-  MatrixXf K = ukfCov * H.transpose() * toInvert.inverse();
-
-  ukfState = ukfState + K*(z - zFromX);
-
-  MatrixXf eye(QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_STATES);
-  eye.setIdentity();
-
-  ukfCov = (eye - K*H)*ukfCov;
+  // 1. compute new mean mu_t_bar before measurement
+  // 2. compute new covariance sigma_t_bar before measure
+  // these two steps are done in Predict.
+  // 3. compute z mean
+  VectorXf mu_z = zFromSigmaPoints * ukfMeanWeights;
+  // 4. compute convariance for measurement
+  MatrixXf diff_zsp_mu = zFromSigmaPoints.colwise() - mu_z;
+  MatrixXf sigma_z = (ukfCovWeights.replicate(1, zFromSigmaPoints.rows()).transpose().array() * diff_zsp_mu.array()).matrix() * diff_zsp_mu.transpose() + R;
+  // 5. compute convariance between prediction and measure
+  MatrixXf diff_sp_mu = ukfSigmaPoints.colwise() - ukfState;
+  MatrixXf sigma_xz = (ukfCovWeights.replicate(1, QUAD_UKF_NUM_STATES).transpose().array() * diff_sp_mu.array()).matrix() * diff_zsp_mu.transpose();
+  // 6. compute kalman gain
+  MatrixXf K = sigma_xz * sigma_z.inverse();
+  // 7. compute new mean after measurement
+  ukfState = ukfState + K * (z - mu_z);
+  // 8. compute new covariance after measurement
+  ukfCov = ukfCov - K * sigma_z * K.transpose();
 }
 
 // Calculate the condition number of the EKF ovariance matrix (useful for numerical diagnostics)

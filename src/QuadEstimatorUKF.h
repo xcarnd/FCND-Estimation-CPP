@@ -35,6 +35,7 @@ public:
 	virtual void UpdateFromMag(float magYaw);
 
   static const int QUAD_UKF_NUM_STATES = 7;
+  static const int QUAD_UKF_NUM_SIGMA_POINTS = 2 * QUAD_UKF_NUM_STATES + 1;
 
   // process covariance
 	MatrixXf Q;
@@ -53,10 +54,9 @@ public:
 
   // generic EKF update
   // z: measurement
-  // H: Jacobian of observation function evaluated at the current estimated state
   // R: observation error model covariance 
   // zFromX: measurement prediction based on current state
-  void Update(VectorXf& z, MatrixXf& H, MatrixXf& R, VectorXf& zFromX);
+  void Update(VectorXf& z, MatrixXf& R, MatrixXf& zFromSigmaPoints);
 
   // UKF state and covariance
 	VectorXf ukfState;
