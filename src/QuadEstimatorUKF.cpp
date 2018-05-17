@@ -4,9 +4,6 @@
 #include "Utility/StringUtils.h"
 #include "Math/Quaternion.h"
 
-#include <iostream>
-using namespace std;
-
 using namespace SLR;
 
 const int QuadEstimatorUKF::QUAD_UKF_NUM_STATES;
@@ -90,8 +87,21 @@ void QuadEstimatorUKF::Init()
   alpha = 1.0f;
   beta = 2.0f;
   kappa = 3 - QUAD_UKF_NUM_STATES;
-  lambda = alpha * alpha * (QUAD_UKF_NUM_STATES + kappa) - QUAD_UKF_NUM_STATES;
+  lambda = powf(alpha, 2) * (QUAD_UKF_NUM_STATES + kappa) - QUAD_UKF_NUM_STATES;
   gamma = sqrtf(QUAD_UKF_NUM_STATES + lambda);
+  
+  // mean weights:
+  // lambda / (N+lambda) for i = 0
+  // 1 / (2 * (N+lambda)) for i > 0
+  float k = QUAD_UKF_NUM_STATES + lambda;
+  ukfMeanWeights.setConstant(1 / (2 * k));
+  ukfMeanWeights(0) = lambda / k;
+
+  // covariance weights:
+  // lamda / (N+lambda) + ( 1 - alpha ^ 2 + beta ) for i = 0
+  // 1 / (2 * (N+lambda)) for i > 0
+  ukfCovWeights.setConstant(1 / (2 * k));
+  ukfCovWeights(0) = lambda / k + (1 - powf(alpha, 2) + beta);
 
   rollErr = pitchErr = maxEuler = 0;
   posErrorMag = velErrorMag = 0;
@@ -179,7 +189,7 @@ void QuadEstimatorUKF::UpdateTrueError(V3F truePos, V3F trueVel, Quaternion<floa
   velErrorMag = trueVel.dist(V3F(ukfState(3), ukfState(4), ukfState(5)));
 }
 
-void QuadEstimatorUKF::ComputeSigmaPointsAndWeights() {
+void QuadEstimatorUKF::ComputeSigmaPoints() {
   // first, compute the square root of covariance matrix
   // ... that said, the most common implemention is perform Cholesky Decomposition, and take the lower triangular
   // matrix as the square root.
@@ -196,19 +206,6 @@ void QuadEstimatorUKF::ComputeSigmaPointsAndWeights() {
   ukfSigmaPoints.col(0) = ukfState;
   ukfSigmaPoints.block<QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_STATES>(0, 1) = (gamma * covSqrt).colwise() + ukfState;
   ukfSigmaPoints.block<QUAD_UKF_NUM_STATES, QUAD_UKF_NUM_STATES>(0, QUAD_UKF_NUM_STATES + 1) = (-gamma * covSqrt).colwise() + ukfState;
-
-  // mean weights:
-  // lambda / (N+lambda) for i = 0
-  // 1 / (2 * (N+lambda)) for i > 0
-  float k = QUAD_UKF_NUM_STATES + lambda;
-  ukfMeanWeights.setConstant(1 / (2 * k));
-  ukfMeanWeights(0) = lambda / k;
-
-  // covariance weights:
-  // lamda / (N+lambda) + ( 1 - alpha ^ 2 + beta ) for i = 0
-  // 1 / (2 * (N+lambda)) for i > 0
-  ukfCovWeights.setConstant(1 / (2 * k));
-  ukfCovWeights(0) = lambda / k + (1 - powf(alpha, 2) + beta);
 }
 
 VectorXf QuadEstimatorUKF::PredictState(VectorXf curState, float dt, V3F accel, V3F gyro)
@@ -291,19 +288,14 @@ MatrixXf QuadEstimatorUKF::GetRbgPrime(float roll, float pitch, float yaw)
 void QuadEstimatorUKF::Predict(float dt, V3F accel, V3F gyro)
 {
   // Compute sigma points with current mean and covariance
-  ComputeSigmaPointsAndWeights();
+  ComputeSigmaPoints();
   // Predict next values of sigma points
   for (int i = 0; i < QUAD_UKF_NUM_SIGMA_POINTS; ++i) {
     ukfSigmaPoints.col(i) = PredictState(ukfSigmaPoints.col(i), dt, accel, gyro);
   }
   ukfState = ukfSigmaPoints * ukfMeanWeights;
-  //cout << "sigma points:"<<endl<< ukfSigmaPoints << endl;
-  //cout << "weights:"<<endl<<ukfMeanWeights << endl;
-  cout << "new mean"<<endl<<ukfState.transpose() << endl;
   MatrixXf diff_sp_mu = ukfSigmaPoints.colwise() - ukfState;
   ukfCov = (ukfCovWeights.replicate(1, QUAD_UKF_NUM_STATES).transpose().array() * diff_sp_mu.array()).matrix() * diff_sp_mu.transpose() + Q;
-  //cout << "cov" << ukfCov << endl;
-  //cout << endl;
 }
 
 void QuadEstimatorUKF::UpdateFromGPS(V3F pos, V3F vel)

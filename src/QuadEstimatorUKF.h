@@ -23,7 +23,7 @@ public:
 
   virtual void Predict(float dt, V3F accel, V3F gyro);
 
-  void ComputeSigmaPointsAndWeights();
+  void ComputeSigmaPoints();
 
   // helper functions for Predict
   VectorXf PredictState(VectorXf curState, float dt, V3F accel, V3F gyro);
