@@ -249,42 +249,6 @@ VectorXf QuadEstimatorUKF::PredictState(VectorXf curState, float dt, V3F accel, 
   return predictedState;
 }
 
-MatrixXf QuadEstimatorUKF::GetRbgPrime(float roll, float pitch, float yaw)
-{
-  // first, figure out the Rbg_prime
-  MatrixXf RbgPrime(3, 3);
-  RbgPrime.setZero();
-
-  // Return the partial derivative of the Rbg rotation matrix with respect to yaw. We call this RbgPrime.
-  // INPUTS: 
-  //   roll, pitch, yaw: Euler angles at which to calculate RbgPrime
-  //   
-  // OUTPUT:
-  //   return the 3x3 matrix representing the partial derivative at the given point
-
-  // HINTS
-  // - this is just a matter of putting the right sin() and cos() functions in the right place.
-  //   make sure you write clear code and triple-check your math
-  // - You can also do some numerical partial derivatives in a unit test scheme to check 
-  //   that your calculations are reasonable
-
-  ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
-  float cosPhi = cosf(roll);
-  float sinPhi = sinf(roll);
-  float cosTheta = cosf(pitch);
-  float sinTheta = sinf(pitch);
-  float cosPsi = cosf(yaw);
-  float sinPsi = sinf(yaw);
-
-  RbgPrime << -cosTheta * sinPsi, -sinPhi * sinTheta * sinPsi - cosTheta * cosPsi, -cosPhi * sinTheta * sinPsi + sinPhi * cosPsi,
-               cosTheta * cosPsi, sinPhi * sinTheta * cosPsi - cosPhi * sinPsi, cosPhi * sinTheta * cosPsi + sinPhi * sinPsi,
-               0, 0, 0;
-
-  /////////////////////////////// END STUDENT CODE ////////////////////////////
-
-  return RbgPrime;
-}
-
 void QuadEstimatorUKF::Predict(float dt, V3F accel, V3F gyro)
 {
   // Compute sigma points with current mean and covariance
