@@ -221,7 +221,7 @@ MatrixXf QuadEstimatorEKF::GetRbgPrime(float roll, float pitch, float yaw)
   float cosPsi = cosf(yaw);
   float sinPsi = sinf(yaw);
 
-  RbgPrime << -cosTheta * sinPsi, -sinPhi * sinTheta * sinPsi - cosTheta * cosPsi, -cosPhi * sinTheta * sinPsi + sinPhi * cosPsi,
+  RbgPrime << -cosTheta * sinPsi, -sinPhi * sinTheta * sinPsi - cosPhi * cosPsi, -cosPhi * sinTheta * sinPsi + sinPhi * cosPsi,
                cosTheta * cosPsi, sinPhi * sinTheta * cosPsi - cosPhi * sinPsi, cosPhi * sinTheta * cosPsi + sinPhi * sinPsi,
                0, 0, 0;
 
